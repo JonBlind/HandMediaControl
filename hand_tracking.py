@@ -8,16 +8,11 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
-# Variable representing the path for the default mediapipe hand_detection model.
-model_path = 'hand_landmarker.task'
 
-
-mp_image = None
-current_timestamp_ms = None
-
+# Code to capture hand position and tracking is given by
+# MediaPipe in their original documentation
+# https://mediapipe.readthedocs.io/en/latest/solutions/hands.html
 def video_capture():
-    global mp_image
-    global current_timestamp_ms
     cap = cv2.VideoCapture(0)
 
     cv2.namedWindow("HandTracking")
@@ -46,12 +41,12 @@ def video_capture():
             frame.flags.writeable = False
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = hands.process(frame)
-            current_timestamp_ms = int((time.time() - start_time) * 1000)  # Remove current time from start-time and change to ms for timestamp
 
 
             # Now that we processed the frame, we can make it writable again.
             frame.flags.writeable = True
 
+            # Recreate frame and use it to draw each landmark.
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
