@@ -14,6 +14,8 @@ mp_hands = mp.solutions.hands
 # https://mediapipe.readthedocs.io/en/latest/solutions/hands.html
 def video_capture():
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     cv2.namedWindow("HandTracking")
     with mp_hands.Hands(
