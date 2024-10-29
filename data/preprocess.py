@@ -38,36 +38,6 @@ class PreprocessGestureData:
         return data
     
     
-    def translate_landmarks_around_wrists(self, frame):
-        '''
-        <p>Given a frame from the JSON file that has been made from data gathering,\n
-        grab every landmark and normalize them around landmark 0 (wrist).</p>
-        
-        <pre>translate_landmarks_around_wrists(self, frame)</pre>
-    
-        <strong>Arguments:</strong>
-        <ul>
-            <li>frame, Frame of a sequence, includes index #, timestamp, handedness of the hand, and landmark coordinates</li>
-        </ul>
-
-        <strong>Return:</strong>\n
-        Array of landmarks where every landmark is normalized/centered around the wrist.</p>
-
-        '''
-
-        wrist_x, wrist_y, wrist_z = frame["landmarks"][:3]
-        translated_landmarks = []
-
-        for i in range(0, len(frame["landmarks"]), 3):
-            x, y, z = frame["landmarks"][i:i+3]
-            translated_landmarks.extend([
-                x - wrist_x,
-                y - wrist_y,
-                z - wrist_z
-            ])
-
-        return translated_landmarks
-    
     def calculate_wrist_displacement(self, current_wrist, prior_wrist):
         '''
         <p>Given a set of coordinates for the current wrists, and the prior wrists,\n
@@ -151,7 +121,7 @@ class PreprocessGestureData:
     def process_sequence(self, sequence_data):
         '''
         <p>Given a sequence from the data_gathered JSON file that has less frames than desired, process the sequence.\n
-        Will normalize all the landmarks present in the sequence based on the frame's wrist position.\n
+        Will calculate the previous wrist position based on the prior frame.\n
         If needed, the sequence will be either trimmed or padded to maintain constant frame count across the data.\n</p>
         
         <pre>process_sequence(self, sequence)</pre>
@@ -173,16 +143,15 @@ class PreprocessGestureData:
         # Then identify the wrist displacement.
         # Add the new/updated info to the processed array.
         for frame in sequence_data:
-            wrist_x, wrist_y, wrist_x = frame["landmarks"][:3]
-            normalized_landmarks = self.translate_landmarks_around_wrists(frame)
-            wrist_displacement = self.calculate_wrist_displacement((wrist_x, wrist_y, wrist_x), previous_wrist_pos)
+            wrist_x, wrist_y, wrist_z = frame["landmarks"][:3]
+            wrist_displacement = self.calculate_wrist_displacement((wrist_x, wrist_y, wrist_z), previous_wrist_pos)
 
             processed_sequence.append({
                 "frame_index": frame["frame_index"],
                 "timestamp": frame["timestamp"],
                 "handedness": frame["handedness"],
                 "wrist_displacement": wrist_displacement,
-                "landmarks": normalized_landmarks
+                "landmarks": frame["landmarks"]
             })
 
             previous_wrist_pos = (wrist_x, wrist_y, wrist_x)
@@ -190,6 +159,7 @@ class PreprocessGestureData:
         # Trim/pad as needed.
         if len(processed_sequence) < self.sequence_length:
             processed_sequence = self.pad_sequence(processed_sequence)
+
         elif len(processed_sequence) > self.sequence_length:
             processed_sequence = self.trim_sequence(processed_sequence)
 
@@ -199,8 +169,7 @@ class PreprocessGestureData:
     def preprocess_and_save(self):
         '''
         <p>Takes the initalized class object, intakes the data from the <code>source</code> argument.\n
-        The data is then processed, having every landmark coordinate translate to center around the wrist.\n
-        The sequences have their frames padded/trimmed as needed.\n
+        The data is then processed to include wrist displacement tracking and is padded or trimmed as needed.\n
         Then the data will be saved into the file specified by the <code>source</code> argument.</p>
         
         <pre>preprocess_and_save(self, sequence)</pre>
@@ -228,16 +197,3 @@ class PreprocessGestureData:
         with open(self.destination, 'w') as file:
             json.dump(preprocessed_sequences, file, indent=4)
         print(f"Preprocessed And Successfully Saved To: {self.destination}")
-
-
-
-
-
-
-
-
-
-
-    
-
-        
