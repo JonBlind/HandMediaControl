@@ -19,6 +19,7 @@ def video_capture():
 
     cv2.namedWindow("HandTracking")
     with mp_hands.Hands(
+    max_num_hands =1,
     model_complexity=0,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as hands:
@@ -49,7 +50,7 @@ def video_capture():
             frame.flags.writeable = True
 
             # Recreate frame and use it to draw each landmark.
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(

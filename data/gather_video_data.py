@@ -87,6 +87,7 @@ def video_capture_data_gather():
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv2.CAP_PROP_FPS, 30)
 
     cv2.namedWindow("HandTracking")
     with mp_hands.Hands(
@@ -124,7 +125,16 @@ def video_capture_data_gather():
                 frame_index = len(sequence_data)
                 frame_timestamp = time.time() - start_time
             
-                for hand_landmarks in results.multi_hand_landmarks:
+                for index, hand_landmarks in enumerate(results.multi_hand_landmarks):
+                    
+                    # Grab and store the hand that is being tracked.
+                    handedness = results.multi_handedness[index].classification[0].label
+
+                    # FOR SOME REASON IT ALWAYS RETURNS THE OPPOSITE HAND??
+                    # So im just relabeling them.
+                    # The video being mirrored doesn't change this either.
+                    handedness = "Left" if handedness == "Right" else "Right"
+
                 
                     # Create an array to collect data on landmarks. For every landmark
                     # We grab their x,y,z coordinates and store them.
@@ -136,6 +146,7 @@ def video_capture_data_gather():
                     sequence_data.append({
                         "frame_index": frame_index,
                         "timestamp": frame_timestamp,
+                        "handedness": handedness,
                         "landmarks": landmarks
                     })
 
@@ -145,6 +156,10 @@ def video_capture_data_gather():
                         mp_hands.HAND_CONNECTIONS,
                         mp_drawing_styles.get_default_hand_landmarks_style(),
                         mp_drawing_styles.get_default_hand_connections_style())
+                    
+
+            # Convert camera to normal colors.
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     
             # Display instructions on the frame
             instructions = [
