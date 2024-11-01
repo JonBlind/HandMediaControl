@@ -52,7 +52,7 @@ class PreprocessGestureData:
         </ul>
 
         <strong>Return:</strong>\n
-        Array of 3 int, representing the difference in current by prior.</p>
+            Array of 3 int, representing the difference in current by prior.</p>
 
         '''
         if prior_wrist is None:
@@ -78,7 +78,7 @@ class PreprocessGestureData:
         </ul>
 
         <strong>Return:</strong>\n
-        A padded sequence that has either end duplicated to retain natural flow and achieving the desired frame count.</p>
+            A padded sequence that has either end duplicated to retain natural flow and achieving the desired frame count.</p>
         
         '''
     
@@ -87,9 +87,9 @@ class PreprocessGestureData:
         start_count = num_frames_needed // 2
         end_count = num_frames_needed - start_count
 
-        padded_sequence = [sequence[0]] * start_count + sequence + [sequence[-1]] * end_count 
+        padded_sequence = [sequence[0]] * start_count + sequence + [sequence[-1]] * end_count
         
-        return padded_sequence
+        return self.reindex_sequence(padded_sequence)
     
     def trim_sequence(self, sequence):
         '''
@@ -105,7 +105,7 @@ class PreprocessGestureData:
         </ul>
 
         <strong>Return:</strong>\n
-        A trimmed sequence that has either end removed to retain natural flow and achieving the desired frame count.</p>
+            A trimmed sequence that has either end removed to retain natural flow and achieving the desired frame count.</p>
         
         '''
         excess_frame_count = len(sequence) - self.sequence_length
@@ -115,7 +115,23 @@ class PreprocessGestureData:
 
         trimmed_sequence = sequence[start_count:len(sequence) - end_count]
         
-        return trimmed_sequence
+        return self.reindex_sequence(trimmed_sequence)
+    
+    def reindex_sequence(self, sequence):
+        """
+        Helper to reindex the frame indices in a sequence from 0 to sequence_length - 1.
+        
+        Args:
+            sequence (list): List of frames in the sequence, each with a "frame_index".
+            
+        Returns:
+            list: The sequence with updated frame indices.
+        """
+
+        for i, frame in enumerate(sequence):
+            frame["frame_index"] = i
+        return sequence
+
     
 
     def process_sequence(self, sequence_data):
@@ -180,7 +196,7 @@ class PreprocessGestureData:
         </ul>
 
         <strong>Return:</strong>\n
-        VOID. No return. However, will create a new file containing information from the source that has been processed.</p>
+            VOID. No return. However, will create a new file containing information from the source that has been processed.</p>
         
         '''
         data = self.load_data()
@@ -197,3 +213,40 @@ class PreprocessGestureData:
         with open(self.destination, 'w') as file:
             json.dump(preprocessed_sequences, file, indent=4)
         print(f"Preprocessed And Successfully Saved To: {self.destination}")
+        
+
+def process_gesture_directory(source_dir, destination_dir, sequence_length):
+    """
+    Processes all JSON gesture files in the source directory and outputs them to the destination directory.
+    
+    Args:
+        source_dir (str): Directory containing the source JSON files.
+        destination_dir (str): Directory to save the processed JSON files.
+        sequence_length (int): Number of frames that each sequence should have.
+    """
+    os.makedirs(destination_dir, exist_ok=True) 
+
+    source_files = os.listdir(source_dir)
+
+    # Loop through each file in the source directory
+    for filename in source_files:
+        if filename.endswith('.json'):
+
+            # Create a new filename with "preprocessed" added before the file extension
+            base_name, ext = os.path.splitext(filename)
+            new_filename = f"{base_name}_preprocessed{ext}"
+
+            source_filepath = os.path.join(source_dir, filename)
+            destination_filepath = os.path.join(destination_dir, new_filename)
+
+            processor = PreprocessGestureData(source_filepath, destination_filepath, sequence_length)
+            processor.preprocess_and_save()
+
+            print(f"Processed {filename} and saved to {destination_filepath}")
+
+
+source_dir = 'gesture_data/'
+destination_dir = 'gesture_data_preprocessed/'
+sequence_length = 30  
+
+process_gesture_directory(source_dir, destination_dir, sequence_length)

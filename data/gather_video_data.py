@@ -26,12 +26,13 @@ gesture_options = {
     '5': 'point_down'
 }
 
-'''
-Method to obtain the next index to be placed inside a given JSON data file.
 
-Goes into gesture_label's associated JSON file and finds the last index, adding 1 to it.
-'''
 def get_next_index(gesture_label):
+    '''
+    Method to obtain the next index to be placed inside a given JSON data file.
+
+    Goes into gesture_label's associated JSON file and finds the last index, adding 1 to it.
+    '''
 
     filename = f"gesture_data/{gesture_label}_data.json"
 
@@ -48,18 +49,21 @@ def get_next_index(gesture_label):
     # Return 0 if no file exists since it will be the first input after creation.
     return 0
 
-'''
-This function stores a sequence of frames representing a gesture into its respective JSON file.
 
-Args:
-    data {Int: idx, String: Gesture Label, Sequence_Data}
-    gesture_label {String}
-
-Doesn't return anything, but directly creates or adds a data to a JSON file.
-Sequence_Data = {(int) Frame Index, (time) timestamp, ([landmark coordinates]) }
-'''
 
 def save_sequence_to_json(data, gesture_label):
+    '''
+    This function stores a sequence of frames representing a gesture into its respective JSON file.
+
+    <strong>Arguments:</strong>
+    <ul>
+            <li>data {<code>Int</code>: idx, <code>String</code>: Gesture Label, <code>Sequence_Data</code>}</li>
+            <li><code>String</code> gesture_label</li>
+        </ul>
+
+    Doesn't return anything, but directly creates or adds a data to a JSON file.\n
+    Sequence_Data = {<code>int</code> Frame Index, <code>time</code> timestamp, ([landmark coordinates]) }
+'''
     filename = f"gesture_data/{gesture_label}_data.json"
     
     # Load existing data or initialize empty array
@@ -75,15 +79,16 @@ def save_sequence_to_json(data, gesture_label):
     with open(filename, 'w') as f:
         json.dump(existing_data, f, indent=4)
     
-'''
-Main method. Responsible for capturing the camera feed,
-asking the user to choose a gesture and start recording,
-and then asks for confirmation to save.
 
-Obviously would've been much easier if I just took photos,
-but this is best for the privacy of the people I ask to help.
-'''
 def video_capture_data_gather():
+    '''
+    Main method. Responsible for capturing the camera feed,\n
+    asking the user to choose a gesture and start recording,\n
+    and then asks for confirmation to save.\n
+
+    Obviously would've been much easier if I just took photos,\n
+    but this is best for the privacy of the people I ask to help.
+'''
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
