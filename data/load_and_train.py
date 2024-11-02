@@ -44,7 +44,7 @@ def load_data_numpy(preprocessed_directory):
                         # Use 1 for "Right" and 0 for "Left" in handedness
                         handedness = [1] if frame["handedness"] == "Right" else [0]
                         wrist_displacement = frame["wrist_displacement"]
-                        absolute_landmarks = frame["absolute_landmarks"]
+                        absolute_landmarks = frame["landmarks"]
                         relative_landmarks = frame["relative_landmarks"]
 
                         frame_features = absolute_landmarks + relative_landmarks + handedness + wrist_displacement
@@ -128,13 +128,14 @@ def create_model(sequence_length, num_features, num_classes):
     # Basically saw a large mix of videos and pages saying using a Neural network following a Long short-term Memory
     # model would be ideal for optical detection. Also heavily inspired from AI lab I did.
     model = models.Sequential([
-        layers.LSTM(128, input_shape=(sequence_length, num_features), return_sequences=True),
+        layers.LSTM(128, input_shape=(sequence_length, num_features), return_sequences=True, 
+                    kernel_regularizer=keras.regularizers.l2(0.01)),
         layers.Dropout(0.4),
-        layers.LSTM(128),
+        layers.LSTM(128, kernel_regularizer=keras.regularizers.l2(0.01)),
         layers.Dropout(0.4),
-        layers.Dense(64, activation='relu', kernel_regularizer='l2'),
+        layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.01)),
         layers.Dense(num_classes, activation='softmax')
-    ])
+])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
@@ -165,14 +166,14 @@ def train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, n
 
     # Train the model and capture the training history
 
-    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=30, restore_best_weights=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=1e-5)
+    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=120, restore_best_weights=True)
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=15, min_lr=1e-5)
 
     history = model.fit(
         X_train, Y_train, 
         validation_data=(X_val, Y_val), 
-        epochs=500, 
-        batch_size= 100,
+        epochs=550, 
+        batch_size= 75,
         callbacks=[early_stopping, reduce_lr])
     model.save(os.path.join('model', "gesture_model.keras"))
 

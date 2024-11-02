@@ -233,6 +233,33 @@ class PreprocessGestureData:
         with open(self.destination, 'w') as file:
             json.dump(preprocessed_sequences, file, indent=4)
         print(f"Preprocessed And Successfully Saved To: {self.destination}")
+
+    def construct_landmark_vector(self, landmarks, handedness, previous_wrist_pos):
+        """
+        Constructs a feature vector for a frame based on landmarks, handedness, and wrist displacement.\n
+        This serves use for the actual gesture_training.py file to quickly construct vectors with incoming data.
+
+        Args:
+            landmarks (list): Absolute x, y, z coordinates of each landmark (63 values).
+            handedness (str): "Right" or "Left" to indicate hand orientation.
+            previous_wrist_pos (list): Previous wrist coordinates [x, y, z] for calculating displacement.
+
+        Returns:
+            list: The full feature vector for the frame, including absolute landmarks, 
+                  relative landmarks, handedness, and wrist displacement.
+        """
+        # Handedness as a single feature
+        handedness_feature = [1 if handedness == "Right" else 0]
+        
+        # Wrist displacement relative to the previous frame
+        wrist_displacement = self.calculate_wrist_displacement(landmarks[:3], previous_wrist_pos)
+        
+        # Relative landmarks calculated around the wrist
+        relative_landmarks = self.calculate_wrist_relative_landmarks(landmarks)
+        
+        # Combine all features into a single vector
+        feature_vector = landmarks + relative_landmarks + handedness_feature + wrist_displacement
+        return feature_vector
         
 
 def process_gesture_directory(source_dir, destination_dir, sequence_length):
@@ -265,8 +292,10 @@ def process_gesture_directory(source_dir, destination_dir, sequence_length):
             print(f"Processed {filename} and saved to {destination_filepath}")
 
 
-source_dir = 'gesture_data/'
-destination_dir = 'gesture_data_preprocessed/'
-sequence_length = 30  
 
-process_gesture_directory(source_dir, destination_dir, sequence_length)
+if __name__ == "__main__":
+    source_dir = 'gesture_data/'
+    destination_dir = 'gesture_data_preprocessed/'
+    sequence_length = 30  
+
+    process_gesture_directory(source_dir, destination_dir, sequence_length)

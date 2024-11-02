@@ -2,6 +2,7 @@ import mediapipe as mp
 import numpy as np
 import cv2
 import json
+import tensorflow as tf
 from tensorflow import keras
 from data.preprocess import PreprocessGestureData
 
@@ -19,6 +20,59 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 preprocessor = PreprocessGestureData(None, None, sequence_length=30)
+
+
+def process_frame(frame, hands, previous_wrist_pos):
+    """
+    Process a single frame to extract landmarks, handedness, and construct the feature vector.
+
+    Args:
+        frame: The current video frame from which to detect the hand.
+        previous_wrist_pos: The previous wrist position to calculate displacement.
+
+    Returns:
+        processed_landmarks (list): The constructed feature vector for the frame.
+        updated_wrist_pos (list): The updated wrist position to pass to the next frame.
+        handedness_label (str): The handedness of the detected hand ("Right" or "Left").
+        landmarks_drawn (bool): Flag indicating if landmarks were successfully detected and drawn.
+    """
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = hands.process(frame_rgb)
+
+    if results.multi_hand_landmarks:
+        hand_landmarks = results.multi_hand_landmarks[0]
+        handedness = results.multi_handedness[0].classification[0].label
+
+        # Extract absolute landmarks (21 frames * 3 coords = 63 values)
+        absolute_landmarks = [coord for landmark in hand_landmarks.landmark 
+                              for coord in (landmark.x, landmark.y, landmark.z)]
+
+
+        # Use the helper method in PreprocessGestureData to construct the feature vector
+        processed_landmarks = preprocessor.construct_landmark_vector(
+            absolute_landmarks, handedness, previous_wrist_pos
+        )
+
+        # Update wrist position for the next frame
+        updated_wrist_pos = absolute_landmarks[:3]
+
+        # Draw landmarks on the frame
+        mp_drawing.draw_landmarks(
+            frame,
+            hand_landmarks,
+            mp_hands.HAND_CONNECTIONS,
+            mp_drawing_styles.get_default_hand_landmarks_style(),
+            mp_drawing_styles.get_default_hand_connections_style()
+        )
+
+        return processed_landmarks, updated_wrist_pos, handedness, True
+    else:
+        return None, previous_wrist_pos, None, False
+    
+def apply_temperature_scaling(predictions):
+    # Apply temperature scaling to soften predictions
+    scaled_predictions = tf.nn.softmax(predictions)
+    return scaled_predictions
 
 def video_capture():
     '''
@@ -40,7 +94,7 @@ def video_capture():
             print("Error: Could not open camera.")
             exit()
 
-        sequence = []  # To store a sequence of landmarks
+        sequence = []  # Store a sequence of landmarks
         previous_wrist_pos = None
 
         while True:
@@ -48,33 +102,17 @@ def video_capture():
             if not ret:
                 print("Error: Could not retrieve frame.")
                 break
-            
-            # Flip frame for a mirror effect
-            frame.flags.writeable = False
+
+            # Flip frame to mirror and look like a selfie.
             frame = cv2.flip(frame, 1)
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = hands.process(frame)
-            
-            # If we actually see results in the landmarks
-            if results.multi_hand_landmarks:
-                frame.flags.writeable = True
-                hand_landmarks = results.multi_hand_landmarks[0]
-                handedness = results.multi_handedness[0].classification[0].label
 
-                landmarks = []
+            # Process frame and extract feature vector
+            processed_landmarks, updated_wrist_pos, handedness_label, landmarks_drawn = process_frame(frame, hands, previous_wrist_pos)
 
-                for landmark in hand_landmarks.landmark:
-                    landmarks.extend([landmark.x, landmark.y, landmark.z])
+            # Update the wrist position
+            previous_wrist_pos = updated_wrist_pos
 
-                # Mediapipe is goofy and has the hand label inverted so fix it.
-                handedness_label = "Left" if handedness == "Right" else "Right"
-
-                wrist_displacement = preprocessor.calculate_wrist_displacement(landmarks[:3], previous_wrist_pos)
-
-                previous_wrist_pos = landmarks[:3]
-                    
-                # Preprocess and add to sequence
-                processed_landmarks = landmarks + [1 if handedness_label == "Right" else 0] + wrist_displacement
+            if landmarks_drawn and processed_landmarks:
                 sequence.append(processed_landmarks)
 
                 # Keep sequence length to 30 frames
@@ -84,23 +122,18 @@ def video_capture():
                 # Predict gesture if sequence is ready
                 if len(sequence) == 30:
                     prediction = model.predict(np.expand_dims(sequence, axis=0))
-                    gesture_idx = np.argmax(prediction)
+                    scaled_prediction = apply_temperature_scaling(prediction)
+                    gesture_idx = np.argmax(scaled_prediction)
                     gesture = reverse_label_map[gesture_idx]
-                    confidence = np.max(prediction)
+                    confidence = np.max(scaled_prediction)
 
                     # Display gesture with confidence level
-                    if confidence > 0.5:
+                    if confidence > 0.10:
                         cv2.putText(frame, f'{gesture} ({confidence:.2f})', (10, 30), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
-
-                    # Draw landmarks on the frame
-                    mp_drawing.draw_landmarks(
-                        frame,
-                        hand_landmarks,
-                        mp_hands.HAND_CONNECTIONS,
-                        mp_drawing_styles.get_default_hand_landmarks_style(),
-                        mp_drawing_styles.get_default_hand_connections_style()
-                    )
+                    else:
+                        cv2.putText(frame, 'No Gesture', (10, 30), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
 
             # Display the frame
             cv2.imshow("HandTracking", frame)
