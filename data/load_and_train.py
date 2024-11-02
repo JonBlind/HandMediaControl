@@ -40,8 +40,14 @@ def load_data_numpy(preprocessed_directory):
                     sequence_data = []
 
                     for frame in sequence["sequence_data"]:
+
                         # Use 1 for "Right" and 0 for "Left" in handedness
-                        frame_features = frame["landmarks"] + [1 if frame["handedness"] == "Right" else 0] + frame["wrist_displacement"]
+                        handedness = [1] if frame["handedness"] == "Right" else [0]
+                        wrist_displacement = frame["wrist_displacement"]
+                        absolute_landmarks = frame["absolute_landmarks"]
+                        relative_landmarks = frame["relative_landmarks"]
+
+                        frame_features = absolute_landmarks + relative_landmarks + handedness + wrist_displacement
                         sequence_data.append(frame_features)
 
                     X.append(sequence_data)
@@ -196,6 +202,20 @@ def train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, n
 
     return model
 
+def save_label_map(label_map, directory="model"):
+    """
+    Saves the label map to a JSON file in the specified directory.
+
+    Args:
+        label_map (dict): Dictionary mapping class labels to their respective integer encoding.
+        directory (str): Directory to save the label map JSON file.
+    """
+    os.makedirs(directory, exist_ok=True)
+    with open(os.path.join(directory, "label_map.json"), "w") as file:
+        json.dump(label_map, file, indent=4)
+
+    print(f"Label map saved to {os.path.join(directory, 'label_map.json')}")
+
 if __name__ == "__main__":
     '''
     Main method of tge load_and_train file.
@@ -223,6 +243,9 @@ if __name__ == "__main__":
 
     # Train the model
     model = train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, num_classes)
+
+    # Save label map as JSON file
+    save_label_map(label_map)
 
     # Evaluate on test set
     test_loss, test_acc = model.evaluate(X_test, Y_test)

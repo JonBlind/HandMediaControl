@@ -63,6 +63,24 @@ class PreprocessGestureData:
                 current_wrist[1] - prior_wrist[1],
                 current_wrist[2] - prior_wrist[2]
             ]
+        
+    def calculate_wrist_relative_landmarks(self, landmarks):
+        '''
+        Method to calculate the wrist-relative landmarks given a frame's landmarks.
+        Essentially, will subtract every coordinate with the wrist's coordinate, almost centering around the wrist.
+        '''
+        wrist_x, wrist_y, wrist_z = landmarks[:3]
+        relative_landmarks = []
+
+        for i in range(0, len(landmarks), 3):
+            x, y, z = landmarks[i : i+3]
+            relative_landmarks.extend([
+                x - wrist_x,
+                y - wrist_y,
+                z - wrist_z
+            ])
+
+        return relative_landmarks
     
     def pad_sequence(self, sequence):
         '''
@@ -161,13 +179,15 @@ class PreprocessGestureData:
         for frame in sequence_data:
             wrist_x, wrist_y, wrist_z = frame["landmarks"][:3]
             wrist_displacement = self.calculate_wrist_displacement((wrist_x, wrist_y, wrist_z), previous_wrist_pos)
+            wrist_relative_landmarks = self.calculate_wrist_relative_landmarks(frame["landmarks"])
 
             processed_sequence.append({
                 "frame_index": frame["frame_index"],
                 "timestamp": frame["timestamp"],
                 "handedness": frame["handedness"],
                 "wrist_displacement": wrist_displacement,
-                "landmarks": frame["landmarks"]
+                "landmarks": frame["landmarks"],                #original landmarks
+                "relative_landmarks": wrist_relative_landmarks  #coordinates after being subtracted by the wrist position.
             })
 
             previous_wrist_pos = (wrist_x, wrist_y, wrist_x)
