@@ -1,7 +1,10 @@
 {
-    "open_palm": 0,
-    "point_down": 1,
-    "point_up": 2,
-    "swipe_left": 3,
-    "swipe_right": 4
+    "idle": 0,
+    "open_palm": 1,
+    "point_down": 2,
+    "point_left": 3,
+    "point_right": 4,
+    "point_up": 5,
+    "swipe_left": 6,
+    "swipe_right": 7
 }

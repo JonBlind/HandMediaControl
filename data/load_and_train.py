@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
-from keras import layers, models, callbacks
+from keras import layers, models, callbacks, regularizers
 
 
 def load_data_numpy(preprocessed_directory):
@@ -126,16 +126,15 @@ def create_model(sequence_length, num_features, num_classes):
         '''
 
     # Basically saw a large mix of videos and pages saying using a Neural network following a Long short-term Memory
-    # model would be ideal for optical detection. Also heavily inspired from AI lab I did.
+    # model would be ideal for optical detection. Also heavily inspired from AI lab I did. 
     model = models.Sequential([
-        layers.LSTM(128, input_shape=(sequence_length, num_features), return_sequences=True, 
-                    kernel_regularizer=keras.regularizers.l2(0.01)),
-        layers.Dropout(0.4),
-        layers.LSTM(128, kernel_regularizer=keras.regularizers.l2(0.01)),
-        layers.Dropout(0.4),
-        layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.01)),
+        layers.Bidirectional(layers.LSTM(128, return_sequences=True), input_shape=(sequence_length, num_features)),
+        layers.Dropout(0.3),
+        layers.LSTM(128),
+        layers.Dropout(0.3),
+        layers.Dense(64, activation='relu', kernel_regularizer= regularizers.l2(0.03)),
         layers.Dense(num_classes, activation='softmax')
-])
+    ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
@@ -166,14 +165,14 @@ def train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, n
 
     # Train the model and capture the training history
 
-    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=120, restore_best_weights=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=15, min_lr=1e-5)
+    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=170, restore_best_weights=True)
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=55, min_lr=1e-5)
 
     history = model.fit(
         X_train, Y_train, 
         validation_data=(X_val, Y_val), 
-        epochs=550, 
-        batch_size= 75,
+        epochs=750, 
+        batch_size= 65,
         callbacks=[early_stopping, reduce_lr])
     model.save(os.path.join('model', "gesture_model.keras"))
 
@@ -219,15 +218,9 @@ def save_label_map(label_map, directory="model"):
 
 if __name__ == "__main__":
     '''
-    Main method of tge load_and_train file.
+    Main method of the load_and_train file.
     This essentially creates the model and the graph for its training data in the ./model directory.
-    Will Print ending test accuracy and the label map for reminder as to which index corresponds to a specific labels.
-    Should be:
-    0 -> open_palm
-    1 -> point_down
-    2 -> point_up
-    3 -> swipe_left
-    4 -> swipe_right
+    Will print ending test accuracy.
     '''
     preprocessed_dir = 'gesture_data_preprocessed' 
     sequence_length = 30 
@@ -251,7 +244,6 @@ if __name__ == "__main__":
     # Evaluate on test set
     test_loss, test_acc = model.evaluate(X_test, Y_test)
     print(f"Test accuracy: {test_acc}")
-    print(f"Label Map: {label_map}")
         
 
 

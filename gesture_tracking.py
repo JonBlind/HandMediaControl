@@ -22,6 +22,38 @@ mp_hands = mp.solutions.hands
 preprocessor = PreprocessGestureData(None, None, sequence_length=30)
 
 
+def is_swipe_motion(sequence, direction):
+    x_positions = [frame[0] for frame in sequence]  # Extract x-coordinates of wrist
+    
+    if direction == 'right':
+        for i in range(1, len(x_positions)):
+            if x_positions[i] >= x_positions[i - 1]:
+                return False
+        return True
+    
+    elif direction == 'left':
+        for i in range(1, len(x_positions)):
+            if x_positions[i] <= x_positions[i - 1]:
+                return False
+        return True
+    
+    return False
+
+def handle_swipe_motion(frame, gesture, confidence, sequence):
+    direction = "left" if gesture == "swipe_left" else "right"
+
+    if is_swipe_motion(sequence, direction):
+        print(f"Swipe motion detected in the {direction} direction with confidence {confidence}")
+        cv2.putText(frame, f'{gesture} ({confidence:.2f})', (10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
+    
+    else:
+        print("Swipe motion not consistent with detected direction.")
+        cv2.putText(frame, f'idle ({confidence:.2f})', (10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
+
+
+
 def process_frame(frame, hands, previous_wrist_pos):
     """
     Process a single frame to extract landmarks, handedness, and construct the feature vector.
@@ -69,10 +101,6 @@ def process_frame(frame, hands, previous_wrist_pos):
     else:
         return None, previous_wrist_pos, None, False
     
-def apply_temperature_scaling(predictions):
-    # Apply temperature scaling to soften predictions
-    scaled_predictions = tf.nn.softmax(predictions)
-    return scaled_predictions
 
 def video_capture():
     '''
@@ -122,18 +150,14 @@ def video_capture():
                 # Predict gesture if sequence is ready
                 if len(sequence) == 30:
                     prediction = model.predict(np.expand_dims(sequence, axis=0))
-                    scaled_prediction = apply_temperature_scaling(prediction)
-                    gesture_idx = np.argmax(scaled_prediction)
+                    gesture_idx = np.argmax(prediction)
                     gesture = reverse_label_map[gesture_idx]
-                    confidence = np.max(scaled_prediction)
+                    confidence = np.max(prediction)
 
                     # Display gesture with confidence level
-                    if confidence > 0.10:
+                    if confidence >= 0.5 and gesture != "idle": 
                         cv2.putText(frame, f'{gesture} ({confidence:.2f})', (10, 30), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
-                    else:
-                        cv2.putText(frame, 'No Gesture', (10, 30), 
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_4)
 
             # Display the frame
             cv2.imshow("HandTracking", frame)

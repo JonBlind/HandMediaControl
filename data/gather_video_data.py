@@ -23,7 +23,10 @@ gesture_options = {
     '2': 'swipe_left',
     '3': 'swipe_right',
     '4': 'point_up',
-    '5': 'point_down'
+    '5': 'point_down',
+    '6': 'point_left',
+    '7': 'point_right',
+    '8': 'idle'
 }
 
 
@@ -170,7 +173,8 @@ def video_capture_data_gather():
             instructions = [
                 "Press keys 1-5 to select a gesture:",
                 "1 - Open Palm | 2 - Swipe Left | 3 - Swipe Right",
-                "4 - Point Up | 5 - Point Down",
+                "4 - Point Up | 5 - Point Down | 6 - Point Left",
+                "7 - Point Right | 8 - Idle",
                 f"Selected gesture: {gesture_label if gesture_label else 'None'}",
                 "Press 'p' to start capturing, 'ESC' to quit"
             ]
@@ -213,7 +217,7 @@ def video_capture_data_gather():
                 continue
 
             # Select gesture based on number keys
-            for i in range (1, 6):
+            for i in range (1, 9):
                 if key in [ord(str(i))]:
                     gesture_label = gesture_options[chr(key)]
                     print(f"Selected gesture: {gesture_label}")
