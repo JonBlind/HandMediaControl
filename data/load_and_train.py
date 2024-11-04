@@ -128,11 +128,12 @@ def create_model(sequence_length, num_features, num_classes):
     # Basically saw a large mix of videos and pages saying using a Neural network following a Long short-term Memory
     # model would be ideal for optical detection. Also heavily inspired from AI lab I did. 
     model = models.Sequential([
-        layers.Bidirectional(layers.LSTM(128, return_sequences=True), input_shape=(sequence_length, num_features)),
+        layers.Bidirectional(layers.LSTM(64, return_sequences=True, kernel_regularizer=regularizers.l2(0.01)), input_shape=(sequence_length, num_features)),
+        layers.Dropout(0.4),
+        layers.Bidirectional(layers.LSTM(64, kernel_regularizer=regularizers.l2(0.01))),
+        layers.Dropout(0.4),
+        layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.05)),
         layers.Dropout(0.3),
-        layers.LSTM(128),
-        layers.Dropout(0.3),
-        layers.Dense(64, activation='relu', kernel_regularizer= regularizers.l2(0.03)),
         layers.Dense(num_classes, activation='softmax')
     ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -166,7 +167,7 @@ def train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, n
     # Train the model and capture the training history
 
     early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=170, restore_best_weights=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=55, min_lr=1e-5)
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=65, min_lr=1e-5)
 
     history = model.fit(
         X_train, Y_train, 
