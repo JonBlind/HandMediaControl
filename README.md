@@ -17,7 +17,7 @@ A Python application that enables hands-free media control using gestures recogn
     cd OpenCV-Gesture-Media-Controller
     ```
 
-2. **Install Dependencies**:
+2. **Install Dependencies**
 
 3. **Run the Application**:
     ```bash
