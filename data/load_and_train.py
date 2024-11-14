@@ -9,19 +9,16 @@ from keras import layers, models, callbacks, regularizers
 
 def load_data_numpy(preprocessed_directory):
     '''
-        <p>Loads the all the data found in the given directory into a set of numpy arrays.</p>
-        
-        <pre>load_data_numpy(preprocessed_directorys)</pre>
-    
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>preprocessed_directorys</code>, <code>PATH</code> of the directory relative to this file that contains .JSON files consisting of preprocessed gesture data.</li>
-        </ul>
+    Loads all the data found in the given directory into a set of numpy arrays.
 
-        <strong>Return:</strong>\n
-            X : <code>load_data_numpy()[0]</code>: Data Array Containing [landmarks, handedness, wrist_displacement]. </p>
-            Y : <code>load_data_numpy()[1]</code>: Label Array containing the corresponding results/labels for each data set in X.
-        '''
+    Arguments:
+        preprocessed_directory (PATH): Path of the directory relative to this file that contains .JSON files with preprocessed gesture data.
+
+    Returns:
+        X (np.array): Data array containing [landmarks, handedness, wrist_displacement].
+
+        Y (np.array): Label array with the corresponding results/labels for each data set in X.
+    '''
 
 
 
@@ -56,18 +53,15 @@ def load_data_numpy(preprocessed_directory):
 
 def prepare_labels(Y):
     '''
-        <p>Manipulates a given Label Array, formatting it for the learning model.\n
-        Each label in the vector will transform to a corresponding index, and the vector will turn to a one_hot matrix.</p>
-        
-        <pre>prepare_labels(Y : Numpy Label Array)</pre>
-    
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>Y</code>, <code>Numpy Array</code> consisting of labels that have been preprocessed and loaded through the proper method.</li>
-        </ul>
+        Manipulates a given Label Array, formatting it for the learning model.
+        Each label in the vector will transform to a corresponding index, and the vector will turn to a one_hot matrix.
 
-        <strong>Return:</strong>\n
-            Np.Array : <code>prepare_labels()[1]</code>: Numpy array of a one_hot matrix representing the inputted label vector.
+        Arguments:
+            Y (Numpy Array): NumPy Array consisting of labels that have been preprocessed and loaded through the proper method.
+
+        Returns:
+            Np.Array (prepare_labels()[0]):  Numpy array of a one_hot matrix representing the inputted label vector.\n
+            Dictionary (prepare_labels()[1]): Dictionary representing what index each gesture_label corresponds to.
         '''
     
     # Grab all different labels, and put them in a set
@@ -109,31 +103,27 @@ def split_data(X, Y):
 
 def create_model(sequence_length, num_features, num_classes):
     '''
-        <p> Method to build a tensorflow learning model given the length of a sequence, and number of elements in a frame and in the label_set.</p>
-        
-        <pre>create_model(sequence_length, num_features, num_classes)</pre>
+        Method to build a tensorflow learning model given the length of a sequence, and number of elements in a frame and in the label_set.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>sequence_length</code>, <code>Int</code>Number of frames that each sequence has information for.</li>
-            <li><code>num_features</code>, <code>Int</code>Number of features that each frame tracks. (63 landmark coords + 3 wrist wrist displacement coords + 1 handedness = 67)</li>
-            <li><code>num_classes</code>, <code>Int</code>Number of possible gestures/labels. Length of label_set.</li>
-        </ul>
+        Arguments:
+            sequence_length (Int): Number of frames that each sequence has information for.
+            num_features (Int): Number of features that each frame tracks. (63 landmark coords + 3 wrist wrist displacement coords + 1 handedness = 67)
+            num_classes (Int): Number of possible gestures/labels. Length of label_set.
+        
 
-        <strong>Return:</strong>\n
-        Model : TensorFlow learning model that uses Long Short-Term Memory layers and Dense layers for output.\n
-        The model calculates loss via cross-entropy and follows the "adam" optimizer. (Only one I'm familiar with tbh.)
+        Returns:
+            Model: TensorFlow learning model that uses Long Short-Term Memory layers and Dense layers for output.\n
+            The model calculates loss via cross-entropy and follows the "adam" optimizer. (Only one I'm familiar with tbh.)
         '''
 
     # Basically saw a large mix of videos and pages saying using a Neural network following a Long short-term Memory
     # model would be ideal for optical detection. Also heavily inspired from AI lab I did. 
     model = models.Sequential([
-        layers.Bidirectional(layers.LSTM(64, return_sequences=True, kernel_regularizer=regularizers.l2(0.01)), input_shape=(sequence_length, num_features)),
-        layers.Dropout(0.4),
-        layers.Bidirectional(layers.LSTM(64, kernel_regularizer=regularizers.l2(0.01))),
-        layers.Dropout(0.4),
-        layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.05)),
+        layers.LSTM(128, return_sequences=True, input_shape=(sequence_length, num_features)),
         layers.Dropout(0.3),
+        layers.LSTM(128),
+        layers.Dropout(0.2),
+        layers.Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.01)),
         layers.Dense(num_classes, activation='softmax')
     ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -141,39 +131,35 @@ def create_model(sequence_length, num_features, num_classes):
 
 def train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, num_classes):
     '''
-        <p>Method to train the learning model. Grabs the output of the sklearn split, specified parameters to pass into create_model, \n
-        and uses them to create a model, train it, and plot its accuracy and loss over epochs. (Default: 500 epochs, 100 batch_size).\n
-        THIS WILL SAVE A COPY OF THE MODEL AND THE ACCURACY/LOSS GRAPH IN THE ./data/model/ DIRECTORY.</p>
-        
-        <pre>train_model(X_train, X_val, Y_train, Y_val, sequence_length, num_features, num_classes)</pre>
+        Method to train the learning model. Grabs the output of the sklearn split, specified parameters to pass into create_model, \n
+        and uses them to create a model, train it, and plot its accuracy and loss over epochs. (Default: 500 epochs, 64 batch_size).\n
+        THIS WILL SAVE A COPY OF THE MODEL AND THE ACCURACY/LOSS GRAPH IN THE ./data/model/ DIRECTORY.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>X_train</code>, <code>NumPy Array</code>Split_Data[0] output, outputting the 70% of the data set to train.</li>
-            <li><code>X_val</code>, <code>NumPy Array</code>Split_Data[1] output, outputting the 15% of the data set for validation.</li>
-            <li><code>Y_train</code>, <code>NumPy Array</code>Split_Data[3] output, outputting the 70% of the label set to train.</li>
-            <li><code>Y_val</code>, <code>NumPy Array</code>Split_Data[4] output, outputting the 15% of the label set to validate.</li>
-            <li><code>sequence_length</code>, <code>Int</code>Number of frames that each sequence has information for.</li>
-            <li><code>num_features</code>, <code>Int</code>Number of features that each frame tracks. (63 landmark coords + 3 wrist wrist displacement coords + 1 handedness = 67)</li>
-            <li><code>num_classes</code>, <code>Int</code>Number of possible gestures/labels. Length of label_set.</li>
-        </ul>
+        Arguments:
+            X_train (NumPy Array): Split_Data[0] output, outputting the 70% of the data set to train.
+            X_val (NumPy Array): Split_Data[1] output, outputting the 15% of the data set for validation.
+            Y_train (NumPy Array): Split_Data[3] output, outputting the 70% of the label set to train.
+            Y_val (NumPy Array): Split_Data[4] output, outputting the 15% of the label set to validate.
+            sequence_length (Int): Number of frames that each sequence has information for.
+            num_features (Int): Number of features that each frame tracks. (63 landmark coords + 3 wrist wrist displacement coords + 1 handedness = 67)
+            num_classes (Int): Number of possible gestures/labels. Length of label_set.
 
-        <strong>Return:</strong>\n
-        Model: Saves a copy of the trained model into the ./data/model directory. Also returns the model in the method.
+        Returns:
+            Model: Saves a copy of the trained model into the ./data/model directory. Also returns the model in the method.
         '''
     
     model = create_model(sequence_length, num_features, num_classes)
 
     # Train the model and capture the training history
 
-    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=170, restore_best_weights=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=65, min_lr=1e-5)
+    early_stopping = callbacks.EarlyStopping(monitor='val_loss', patience=150, restore_best_weights=True)
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.05, patience=25, min_lr=1e-5)
 
     history = model.fit(
         X_train, Y_train, 
         validation_data=(X_val, Y_val), 
-        epochs=750, 
-        batch_size= 65,
+        epochs=500, 
+        batch_size= 64,
         callbacks=[early_stopping, reduce_lr])
     model.save(os.path.join('model', "gesture_model.keras"))
 

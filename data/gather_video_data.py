@@ -58,14 +58,10 @@ def save_sequence_to_json(data, gesture_label):
     '''
     This function stores a sequence of frames representing a gesture into its respective JSON file.
 
-    <strong>Arguments:</strong>
-    <ul>
-            <li>data {<code>Int</code>: idx, <code>String</code>: Gesture Label, <code>Sequence_Data</code>}</li>
-            <li><code>String</code> gesture_label</li>
-        </ul>
+    Arguments:
+        data (Dictionary): Information to save into a JSON file (index, gesture, sequence data).
 
-    Doesn't return anything, but directly creates or adds a data to a JSON file.\n
-    Sequence_Data = {<code>int</code> Frame Index, <code>time</code> timestamp, ([landmark coordinates]) }
+    Doesn't return anything, but directly creates or adds a data to a JSON file.
 '''
     filename = f"gesture_data/{gesture_label}_data.json"
     

@@ -32,19 +32,16 @@ class GestureRecognizer:
 
     def process_frame_for_gesture(self, frame):
         '''
-        <p> Method to process a frame, update the sequence, and then return the gesture identified.</p>
-        
-        <pre>process_frame_for_gesture(self, frame)</pre>
+        Method to process a frame, update the sequence, and then return the gesture identified.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>frame</code>, <code>frame</code>Extracted frame outputted by OpenCV.</li>
-        </ul>
+        Arguments:
+            frame (frame): Extracted frame outputted by OpenCV.</li>
 
-        <strong>Return:</strong>\n
-        <code>gesture, confidence</code>\n
-        <code>gesture</code>: The gesture that the program identified the user to be expressing.\n
-        <code>confidence</code>: The confidence number that the model outputs corresponding to the gesture.
+        Returns:
+
+            gesture: The gesture that the program identified the user to be expressing.
+
+            confidence: The confidence number that the model outputs corresponding to the gesture.
         '''
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.hands.process(frame_rgb)
@@ -78,17 +75,13 @@ class GestureRecognizer:
 
     def capture_video_feed(self, display):
         '''
-        <p> Method to capture video feed via openCV.</p>
-        
-        <pre>capture_video_feed(self, display)</pre>
+        Method to capture video feed via openCV.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li><code>display</code>, <code>boolean</code>Should the video feed be played back to the user?</li>
-        </ul>
+        Arguments:
+            display (Boolean): Should the video feed be played back to the user?</li>
 
-        <strong>Return:</strong>\n
-        No Return, it is a loop that displays video feed.
+        Returns:
+            No Return, it is a loop that displays video feed.
         '''
         cap = cv2.VideoCapture(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)

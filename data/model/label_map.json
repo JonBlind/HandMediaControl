@@ -1,10 +1,9 @@
 {
-    "idle": 0,
-    "open_palm": 1,
-    "point_down": 2,
-    "point_left": 3,
-    "point_right": 4,
-    "point_up": 5,
-    "swipe_left": 6,
-    "swipe_right": 7
+    "open_palm": 0,
+    "point_down": 1,
+    "point_left": 2,
+    "point_right": 3,
+    "point_up": 4,
+    "swipe_left": 5,
+    "swipe_right": 6
 }

@@ -6,23 +6,19 @@ import json
 class PreprocessGestureData:
     '''
 
-    <h2>Class Definition: PreprocessGestureData</h2>
+    Class Definition: PreprocessGestureData
 
     This is a class designed for preprocessing data with far more ease when it comes to the gesture data.\n
 
-    This is made in case there is a need to work with new data/information in future cases.
-    
-    <pre>PreprocessGestureData(self, destination, source, sequence_length)</pre>
-    
-        <strong>Arguments:</strong>
-        <ul>
-            <li><strong>source:</strong> <code>PATH</code>, file path of the JSON file to read information from.</li>
-            <li><strong>destination:</strong> <code>PATH</code>, file path of the JSON file (new or not) to deposit all the information into.</li>
-            <li><strong>sequence_length:</strong> <code>int</code>, Number of frames that each sequence should take up.</li>
-        </ul>
+    This is made in case there is a need to work with new data/information in future cases.   
 
-    <p>If the <code>sequence_length</code> of the frames is smaller than from the data set, we will choose the center frames and cut out the extreme ends.\n
-    If the <code>sequence_length</code> of the frames is larger than from the data set, we will duplicate the extreme ends to fill up both ends equally until the target is reached.</p>
+    Arguments:
+        source (PATH): file path of the JSON file to read information from.
+        destination (PATH): file path of the JSON file (new or not) to deposit all the information into.
+        sequence_length (INT): Number of frames that each sequence should take up.
+
+    If the sequence_length of the frames is smaller than from the data set, we will choose the center frames and cut out the extreme ends.\n
+    If the sequence_length of the frames is larger than from the data set, we will duplicate the extreme ends to fill up both ends equally until the target is reached.
 
     '''
     def __init__(self, source, destination, sequence_length):
@@ -40,19 +36,16 @@ class PreprocessGestureData:
     
     def calculate_wrist_displacement(self, current_wrist, prior_wrist):
         '''
-        <p>Given a set of coordinates for the current wrists, and the prior wrists,\n
-        will calcualte the displacement by subtracting the prior from the current position.</p>
+        Given a set of coordinates for the current wrists, and the prior wrists,\n
+        will calcualte the displacement by subtracting the prior from the current position.
         
-        <pre>calculate_wrist_displacement(self, current_wrist, prior_wrist)</pre>
+        Arguments:
+            current_wrist (Int[3]): array of 3 integers represnting the x,y,z coordinates of the current wrist
+            prior_wrist (Int[3]) : array of 3 integers represnting the x,y,z coordinates of the prior wrist
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li>current_wrist, array of 3 integers represnting the x,y,z coordinates of the current wrist</li>
-            <li>prior_wrist, array of 3 integers represnting the x,y,z coordinates of the prior wrist</li>
-        </ul>
 
-        <strong>Return:</strong>\n
-            Array of 3 int, representing the difference in current by prior.</p>
+        Return:
+            Array of 3 int, representing the difference in current by prior.
 
         '''
         if prior_wrist is None:
@@ -84,19 +77,15 @@ class PreprocessGestureData:
     
     def pad_sequence(self, sequence):
         '''
-        <p>Given a sequence from the data_gathered JSON file that has less frames than desired, pad the sequence.\n
+        Given a sequence from the data_gathered JSON file that has less frames than desired, pad the sequence.\n
         Identifies the amount of frames needed, and then splits the amount between the front and end of the sequence,\n
-        where the front and end frames are duplicated for their respective amount.</p>
-        
-        <pre>pad_sequence(self, sequence)</pre>
+        where the front and end frames are duplicated for their respective amount.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li>Sequence: List of frames containing information of the hand being tracked.</li>
-        </ul>
+        Arguments:
+            Sequence: List of frames containing information of the hand being tracked.
 
-        <strong>Return:</strong>\n
-            A padded sequence that has either end duplicated to retain natural flow and achieving the desired frame count.</p>
+        Return:
+            A padded sequence that has either end duplicated to retain natural flow and achieving the desired frame count.
         
         '''
     
@@ -111,19 +100,15 @@ class PreprocessGestureData:
     
     def trim_sequence(self, sequence):
         '''
-        <p>Given a sequence from the data_gathered JSON file that has less frames than desired, trim the sequence.\n
+        Given a sequence from the data_gathered JSON file that has less frames than desired, trim the sequence.\n
         Identifies the amount of frames needed to remove, and then splits the amount between the front and end of the sequence,\n
-        where the front and end frames are removed for their respective amount.</p>
-        
-        <pre>trim_sequence(self, sequence)</pre>
+        where the front and end frames are removed for their respective amount.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li>Sequence: List of frames containing information of the hand being tracked.</li>
-        </ul>
+        Arguments:
+            Sequence (list of frames): List of frames containing information of the hand being tracked.
 
-        <strong>Return:</strong>\n
-            A trimmed sequence that has either end removed to retain natural flow and achieving the desired frame count.</p>
+        Return:
+            A trimmed sequence that has either end removed to retain natural flow and achieving the desired frame count.
         
         '''
         excess_frame_count = len(sequence) - self.sequence_length
@@ -139,7 +124,7 @@ class PreprocessGestureData:
         """
         Helper to reindex the frame indices in a sequence from 0 to sequence_length - 1.
         
-        Args:
+        Arguments:
             sequence (list): List of frames in the sequence, each with a "frame_index".
             
         Returns:
@@ -154,19 +139,15 @@ class PreprocessGestureData:
 
     def process_sequence(self, sequence_data):
         '''
-        <p>Given a sequence from the data_gathered JSON file that has less frames than desired, process the sequence.\n
+        Given a sequence from the data_gathered JSON file that has less frames than desired, process the sequence.\n
         Will calculate the previous wrist position based on the prior frame.\n
-        If needed, the sequence will be either trimmed or padded to maintain constant frame count across the data.\n</p>
-        
-        <pre>process_sequence(self, sequence)</pre>
+        If needed, the sequence will be either trimmed or padded to maintain constant frame count across the data.\n
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li>Sequence: List of frames containing information of the hand being tracked.</li>
-        </ul>
+        Arguments:
+            Sequence: List of frames containing information of the hand being tracked.
 
-        <strong>Return:</strong>\n
-        A sequence processed to have landmarks normalized about the wrist and the proper frame count.</p>
+        Return:
+        A sequence processed to have landmarks normalized about the wrist and the proper frame count.
         
         '''
 
@@ -204,18 +185,14 @@ class PreprocessGestureData:
 
     def preprocess_and_save(self):
         '''
-        <p>Takes the initalized class object, intakes the data from the <code>source</code> argument.\n
+        Takes the initalized class object, intakes the data from the source argument.\n
         The data is then processed to include wrist displacement tracking and is padded or trimmed as needed.\n
-        Then the data will be saved into the file specified by the <code>source</code> argument.</p>
-        
-        <pre>preprocess_and_save(self, sequence)</pre>
+        Then the data will be saved into the file specified by the source argument.
     
-        <strong>Arguments:</strong>
-        <ul>
-            <li>Self: PreprocessGestureData</li>
-        </ul>
+        Arguments:
+            Self: PreprocessGestureData
 
-        <strong>Return:</strong>\n
+        Return:
             VOID. No return. However, will create a new file containing information from the source that has been processed.</p>
         
         '''
